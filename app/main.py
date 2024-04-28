@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 
-app = FastAPI()
+from app.core.lifespan import lifespan
+from app.routers import router
+
+app = FastAPI(lifespan=lifespan)
+
+app.include_router(router)
 
 
 @app.get("/")

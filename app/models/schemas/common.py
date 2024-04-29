@@ -6,7 +6,7 @@ from fastapi.responses import ORJSONResponse
 T = TypeVar("T")
 
 
-class BaseHttpResponse(BaseModel, Generic[T]):
+class BaseResponse(BaseModel, Generic[T]):
     message: str = "OK"
     statusCode: str = "200"
     data: Optional[T] = None

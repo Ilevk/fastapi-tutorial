@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from sqlalchemy import insert
 
 from app.core.db.session import AsyncScopedSession
-from app.models.schemas.common import BaseHttpResponse, HttpResponse
+from app.models.schemas.common import BaseResponse, HttpResponse
 from app.models.schemas.user import UserReq, UserResp
 from app.models.db.student import Student
 from app.models.db.teacher import Teacher
@@ -12,10 +12,10 @@ from app.models.db.teacher import Teacher
 router = APIRouter()
 
 
-@router.post("/teacher", response_model=BaseHttpResponse[UserResp])
+@router.post("/teacher", response_model=BaseResponse[UserResp])
 async def create_teacher(
     request_body: UserReq,
-) -> BaseHttpResponse[UserResp]:
+) -> BaseResponse[UserResp]:
     user_id = uuid4().hex
     async with AsyncScopedSession() as session:
         stmt = (
@@ -37,10 +37,10 @@ async def create_teacher(
     )
 
 
-@router.post("/student", response_model=BaseHttpResponse[UserResp])
+@router.post("/student", response_model=BaseResponse[UserResp])
 async def create_student(
     request_body: UserReq,
-) -> BaseHttpResponse[UserResp]:
+) -> BaseResponse[UserResp]:
     user_id = uuid4().hex
     async with AsyncScopedSession() as session:
         stmt = (

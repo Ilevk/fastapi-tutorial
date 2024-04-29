@@ -9,14 +9,14 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase
 
-from app.core.config import config
+from app.core.config import config, is_local
 
 
 class Base(DeclarativeBase): ...
 
 
 engine = create_async_engine(
-    config.DB_URL, pool_size=20, echo=True, pool_pre_ping=True, max_overflow=10
+    config.DB_URL, pool_size=20, echo=is_local(), pool_pre_ping=True, max_overflow=10
 )
 
 async_session_factory = async_sessionmaker(

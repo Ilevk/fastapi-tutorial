@@ -1,11 +1,12 @@
 import os
+import logging
 
 from pydantic_settings import BaseSettings
 
 
 class Config(BaseSettings):
     ENV: str = "development"
-    DEBUG: bool = True
+    LOG_LEVEL: int = logging.DEBUG
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
     DB_URL: str = "postgresql+asyncpg://postgres:password@localhost:5432/postgres"
@@ -21,7 +22,7 @@ class LocalConfig(Config): ...
 
 
 class ProductionConfig(Config):
-    DEBUG: bool = False
+    LOG_LEVEL: int = logging.INFO
 
 
 def get_config():
@@ -32,6 +33,10 @@ def get_config():
         "prod": ProductionConfig(),
     }
     return config_type[env]
+
+
+def is_local():
+    return get_config().ENV == "local"
 
 
 config: Config = get_config()

@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from sqlalchemy import select, insert, update, delete
 
 from app.core.db.session import AsyncScopedSession
-from app.models.schemas.common import BaseHttpResponse, HttpResponse
+from app.models.schemas.common import BaseResponse, HttpResponse
 from app.models.schemas.class_ import (
     ClassReq,
     ClassResp,
@@ -17,10 +17,10 @@ from app.models.db.class_ import Class, ClassNotice
 router = APIRouter()
 
 
-@router.post("", response_model=BaseHttpResponse[ClassResp])
+@router.post("", response_model=BaseResponse[ClassResp])
 async def create_class(
     request_body: ClassReq,
-) -> BaseHttpResponse[ClassResp]:
+) -> BaseResponse[ClassResp]:
     class_id = uuid4().hex
     async with AsyncScopedSession() as session:
         stmt = (
@@ -46,8 +46,8 @@ async def create_class(
     )
 
 
-@router.get("/list", response_model=BaseHttpResponse[List[ClassResp]])
-async def read_class_list() -> BaseHttpResponse[List[ClassResp]]:
+@router.get("/list", response_model=BaseResponse[List[ClassResp]])
+async def read_class_list() -> BaseResponse[List[ClassResp]]:
     async with AsyncScopedSession() as session:
         stmt = select(Class)
         result = (await session.execute(stmt)).scalars().all()
@@ -65,10 +65,10 @@ async def read_class_list() -> BaseHttpResponse[List[ClassResp]]:
     )
 
 
-@router.get("/{class_id}", response_model=BaseHttpResponse[ClassResp])
+@router.get("/{class_id}", response_model=BaseResponse[ClassResp])
 async def read_class(
     class_id: str,
-) -> BaseHttpResponse[ClassResp]:
+) -> BaseResponse[ClassResp]:
     async with AsyncScopedSession() as session:
         stmt = select(Class).where(Class.class_id == class_id)
         result = (await session.execute(stmt)).scalar()
@@ -83,11 +83,11 @@ async def read_class(
     )
 
 
-@router.post("/notice/{class_id}", response_model=BaseHttpResponse[ClassNoticeResp])
+@router.post("/notice/{class_id}", response_model=BaseResponse[ClassNoticeResp])
 async def create_class_notice(
     class_id: str,
     request_body: ClassNoticeReq,
-) -> BaseHttpResponse[ClassNoticeResp]:
+) -> BaseResponse[ClassNoticeResp]:
     async with AsyncScopedSession() as session:
         stmt = (
             insert(ClassNotice)
@@ -110,11 +110,11 @@ async def create_class_notice(
 
 
 @router.get(
-    "/notice/{class_id}/list", response_model=BaseHttpResponse[List[ClassNoticeResp]]
+    "/notice/{class_id}/list", response_model=BaseResponse[List[ClassNoticeResp]]
 )
 async def read_class_notice_list(
     class_id: str,
-) -> BaseHttpResponse[List[ClassNoticeResp]]:
+) -> BaseResponse[List[ClassNoticeResp]]:
     async with AsyncScopedSession() as session:
         stmt = (
             select(ClassNotice)

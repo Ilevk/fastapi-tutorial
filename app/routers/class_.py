@@ -2,7 +2,7 @@ from uuid import uuid4
 from typing import List
 
 from fastapi import APIRouter
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, update, delete
 
 from app.core.db.session import AsyncScopedSession
 from app.models.schemas.class_ import (
@@ -122,3 +122,51 @@ async def read_class_notice_list(
         )
         for notice in result
     ]
+
+
+@router.put("/notice/{class_id}/{notice_id}", response_model=ClassNoticeResp)
+async def update_class_notice(
+    class_id: str,
+    notice_id: int,
+    request_body: ClassNoticeReq,
+) -> ClassNoticeResp:
+    async with AsyncScopedSession() as session:
+        stmt = (
+            update(ClassNotice)
+            .where(ClassNotice.id == notice_id, ClassNotice.class_id == class_id)
+            .values(message=request_body.message)
+            .returning(ClassNotice)
+        )
+        result: ClassNotice = (await session.execute(stmt)).scalar()
+        await session.commit()
+
+    return ClassNoticeResp(
+        id=result.id,
+        classId=result.class_id,
+        message=result.message,
+        createdAt=result.created_at,
+        updatedAt=result.updated_at,
+    )
+
+
+@router.delete("/notice/{class_id}/{notice_id}", response_model=ClassNoticeResp)
+async def delete_class_notice(
+    class_id: str,
+    notice_id: int,
+) -> ClassNoticeResp:
+    async with AsyncScopedSession() as session:
+        stmt = (
+            delete(ClassNotice)
+            .where(ClassNotice.id == notice_id, ClassNotice.class_id == class_id)
+            .returning(ClassNotice)
+        )
+        result: ClassNotice = (await session.execute(stmt)).scalar()
+        await session.commit()
+
+    return ClassNoticeResp(
+        id=result.id,
+        classId=result.class_id,
+        message=result.message,
+        createdAt=result.created_at,
+        updatedAt=result.updated_at,
+    )

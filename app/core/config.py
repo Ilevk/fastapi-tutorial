@@ -9,8 +9,7 @@ class Config(BaseSettings):
     ENV: str = "dev"
     TITLE: str = "FastAPI Tutorial"
     VERSION: str = "0.1.0"
-    APP_HOST: str = "localhost"
-    APP_PORT: int = 8000
+    APP_HOST: str = "http://localhost:8000"
     OPENAPI_URL: str = "/openapi.json"
     DOCS_URL: str = "/docs"
     REDOC_URL: str = "/redoc"

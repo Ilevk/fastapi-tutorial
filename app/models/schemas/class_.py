@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
+from pydantic.dataclasses import dataclass
 
 
 class ClassReq(BaseModel):
@@ -9,7 +10,8 @@ class ClassReq(BaseModel):
     teacherId: str = Field(..., title="Teacher ID")
 
 
-class ClassResp(BaseModel):
+@dataclass
+class ClassResp:
     classId: str = Field(..., title="Class ID")
     className: str = Field(..., title="Class Name")
     teacherId: str = Field(..., title="Teacher ID")
@@ -20,7 +22,8 @@ class ClassNoticeReq(BaseModel):
     message: str = Field(..., title="Message")
 
 
-class ClassNoticeResp(BaseModel):
+@dataclass
+class ClassNoticeResp:
     id: int = Field(..., title="ID")
     classId: str = Field(..., title="Class ID")
     message: str = Field(..., title="Message")

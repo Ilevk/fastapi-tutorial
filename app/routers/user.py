@@ -1,10 +1,10 @@
 from uuid import uuid4
 
 from fastapi import APIRouter
-from sqlalchemy import select, insert
-
+from sqlalchemy import insert
 
 from app.core.db.session import AsyncScopedSession
+from app.models.schemas.common import BaseHttpResponse, HttpResponse
 from app.models.schemas.user import UserReq, UserResp
 from app.models.db.student import Student
 from app.models.db.teacher import Teacher
@@ -12,10 +12,10 @@ from app.models.db.teacher import Teacher
 router = APIRouter()
 
 
-@router.post("/teacher", response_model=UserResp)
+@router.post("/teacher", response_model=BaseHttpResponse[UserResp])
 async def create_teacher(
     request_body: UserReq,
-) -> UserResp:
+) -> BaseHttpResponse[UserResp]:
     user_id = uuid4().hex
     async with AsyncScopedSession() as session:
         stmt = (
@@ -27,18 +27,20 @@ async def create_teacher(
         result: Teacher = (await session.execute(stmt)).scalar()
         await session.commit()
 
-    return UserResp(
-        userId=result.teacher_id,
-        userName=result.teacher_name,
-        userRole="teacher",
-        createdAt=result.created_at,
+    return HttpResponse(
+        content=UserResp(
+            userId=result.teacher_id,
+            userName=result.teacher_name,
+            userRole="teacher",
+            createdAt=result.created_at,
+        )
     )
 
 
-@router.post("/student", response_model=UserResp)
+@router.post("/student", response_model=BaseHttpResponse[UserResp])
 async def create_student(
     request_body: UserReq,
-) -> UserResp:
+) -> BaseHttpResponse[UserResp]:
     user_id = uuid4().hex
     async with AsyncScopedSession() as session:
         stmt = (
@@ -50,9 +52,11 @@ async def create_student(
         result: Student = (await session.execute(stmt)).scalar()
         await session.commit()
 
-    return UserResp(
-        userId=result.student_id,
-        userName=result.student_name,
-        userRole="student",
-        createdAt=result.created_at,
+    return HttpResponse(
+        content=UserResp(
+            userId=result.student_id,
+            userName=result.student_name,
+            userRole="student",
+            createdAt=result.created_at,
+        )
     )

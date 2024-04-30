@@ -6,6 +6,7 @@ from sqlalchemy import select, insert, update, delete
 
 from app.core.logger import logger
 from app.core.redis import redis_cache, key_builder
+from app.core.errors import error
 from app.core.db.session import AsyncScopedSession
 from app.models.schemas.common import BaseResponse, HttpResponse
 from app.models.schemas.class_ import (
@@ -25,18 +26,23 @@ async def create_class(
 ) -> BaseResponse[ClassResp]:
     class_id = uuid4().hex
     async with AsyncScopedSession() as session:
-        stmt = (
-            insert(Class)
-            .values(
-                class_id=class_id,
-                class_name=request_body.className,
-                teacher_id=request_body.teacherId,
+        try:
+            stmt = (
+                insert(Class)
+                .values(
+                    class_id=class_id,
+                    class_name=request_body.className,
+                    teacher_id=request_body.teacherId,
+                )
+                .returning(Class)
             )
-            .returning(Class)
-        )
 
-        result: Class = (await session.execute(stmt)).scalar()
-        await session.commit()
+            result: Class = (await session.execute(stmt)).scalar()
+            await session.commit()
+        except Exception as e:
+            logger.error(e)
+            await session.rollback()
+            raise error.ClassCreationFailed()
 
     return HttpResponse(
         content=ClassResp(
@@ -93,6 +99,9 @@ async def read_class(
 
         await redis_cache.set(_key, result, ttl=60)
 
+    if result is None:
+        raise error.ClassNotFoundException()
+
     return HttpResponse(
         content=ClassResp(
             classId=result.class_id,
@@ -109,14 +118,19 @@ async def create_class_notice(
     request_body: ClassNoticeReq,
 ) -> BaseResponse[ClassNoticeResp]:
     async with AsyncScopedSession() as session:
-        stmt = (
-            insert(ClassNotice)
-            .values(class_id=class_id, message=request_body.message)
-            .returning(ClassNotice)
-        )
+        try:
+            stmt = (
+                insert(ClassNotice)
+                .values(class_id=class_id, message=request_body.message)
+                .returning(ClassNotice)
+            )
 
-        result: ClassNotice = (await session.execute(stmt)).scalar()
-        await session.commit()
+            result: ClassNotice = (await session.execute(stmt)).scalar()
+            await session.commit()
+        except Exception as e:
+            logger.error(e)
+            await session.rollback()
+            raise error.ClassNoticeCreationFailed()
 
     return HttpResponse(
         content=ClassNoticeResp(
@@ -152,6 +166,9 @@ async def read_class_notice_list(
 
         await redis_cache.set(_key, result, ttl=60)
 
+    if not result:
+        raise error.ClassNoticeNotFound()
+
     return HttpResponse(
         content=[
             ClassNoticeResp(
@@ -173,14 +190,22 @@ async def update_class_notice(
     request_body: ClassNoticeReq,
 ) -> ClassNoticeResp:
     async with AsyncScopedSession() as session:
-        stmt = (
-            update(ClassNotice)
-            .where(ClassNotice.id == notice_id, ClassNotice.class_id == class_id)
-            .values(message=request_body.message)
-            .returning(ClassNotice)
-        )
-        result: ClassNotice = (await session.execute(stmt)).scalar()
-        await session.commit()
+        try:
+            stmt = (
+                update(ClassNotice)
+                .where(ClassNotice.id == notice_id, ClassNotice.class_id == class_id)
+                .values(message=request_body.message)
+                .returning(ClassNotice)
+            )
+            result: ClassNotice = (await session.execute(stmt)).scalar()
+            await session.commit()
+        except Exception as e:
+            logger.error(e)
+            await session.rollback()
+            raise error.ClassNoticeUpdateFailed()
+
+    if result is None:
+        raise error.ClassNoticeNotFound()
 
     return HttpResponse(
         content=ClassNoticeResp(
@@ -199,13 +224,21 @@ async def delete_class_notice(
     notice_id: int,
 ) -> ClassNoticeResp:
     async with AsyncScopedSession() as session:
-        stmt = (
-            delete(ClassNotice)
-            .where(ClassNotice.id == notice_id, ClassNotice.class_id == class_id)
-            .returning(ClassNotice)
-        )
-        result: ClassNotice = (await session.execute(stmt)).scalar()
-        await session.commit()
+        try:
+            stmt = (
+                delete(ClassNotice)
+                .where(ClassNotice.id == notice_id, ClassNotice.class_id == class_id)
+                .returning(ClassNotice)
+            )
+            result: ClassNotice = (await session.execute(stmt)).scalar()
+            await session.commit()
+        except Exception as e:
+            logger.error(e)
+            await session.rollback()
+            raise error.ClassNoticeDeleteFailed()
+
+    if result is None:
+        raise error.ClassNoticeNotFound()
 
     return HttpResponse(
         content=ClassNoticeResp(

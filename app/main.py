@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette_context.middleware import ContextMiddleware
 
 from app.core.config import config
 from app.core.lifespan import lifespan
@@ -11,6 +12,7 @@ app = FastAPI(lifespan=lifespan, **config.fastapi_kwargs)
 
 app.include_router(router)
 app.add_exception_handler(BaseAPIException, api_error_handler)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,6 +20,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(ContextMiddleware)
 
 
 @app.get("/")

@@ -4,6 +4,7 @@ from starlette_context.middleware import ContextMiddleware
 
 from app.core.config import config
 from app.core.lifespan import lifespan
+from app.core.middlewares.sqlalchemy import SQLAlchemyMiddleware
 from app.core.errors.error import BaseAPIException
 from app.core.errors.handler import api_error_handler
 from app.routers import router
@@ -20,6 +21,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(SQLAlchemyMiddleware)
 app.add_middleware(ContextMiddleware)
 
 

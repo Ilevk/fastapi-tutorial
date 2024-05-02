@@ -17,6 +17,7 @@ pydantic-settings = "^2.2.1"
 redis = "^5.0.4"
 pre-commit = "^3.7.0"
 orjson = "^3.10.1"
+starlette-context = "^0.3.6"
 
 
 [build-system]

@@ -61,7 +61,8 @@ async def read_class_list() -> BaseResponse[List[ClassResp]]:
             stmt = select(Class)
             result = (await session.execute(stmt)).scalars().all()
 
-        await redis_cache.set(_key, result, ttl=60)
+        if result:
+            await redis_cache.set(_key, result, ttl=60)
 
     return HttpResponse(
         content=[
@@ -91,7 +92,8 @@ async def read_class(
             stmt = select(Class).where(Class.class_id == class_id)
             result = (await session.execute(stmt)).scalar()
 
-        await redis_cache.set(_key, result, ttl=60)
+        if result:
+            await redis_cache.set(_key, result, ttl=60)
 
     return HttpResponse(
         content=ClassResp(
@@ -150,7 +152,8 @@ async def read_class_notice_list(
             )
             result = (await session.execute(stmt)).scalars().all()
 
-        await redis_cache.set(_key, result, ttl=60)
+        if result:
+            await redis_cache.set(_key, result, ttl=60)
 
     return HttpResponse(
         content=[
@@ -166,12 +169,14 @@ async def read_class_notice_list(
     )
 
 
-@router.put("/notice/{class_id}/{notice_id}", response_model=ClassNoticeResp)
+@router.put(
+    "/notice/{class_id}/{notice_id}", response_model=BaseResponse[ClassNoticeResp]
+)
 async def update_class_notice(
     class_id: str,
     notice_id: int,
     request_body: ClassNoticeReq,
-) -> ClassNoticeResp:
+) -> BaseResponse[ClassNoticeResp]:
     async with AsyncScopedSession() as session:
         stmt = (
             update(ClassNotice)
@@ -193,11 +198,13 @@ async def update_class_notice(
     )
 
 
-@router.delete("/notice/{class_id}/{notice_id}", response_model=ClassNoticeResp)
+@router.delete(
+    "/notice/{class_id}/{notice_id}", response_model=BaseResponse[ClassNoticeResp]
+)
 async def delete_class_notice(
     class_id: str,
     notice_id: int,
-) -> ClassNoticeResp:
+) -> BaseResponse[ClassNoticeResp]:
     async with AsyncScopedSession() as session:
         stmt = (
             delete(ClassNotice)

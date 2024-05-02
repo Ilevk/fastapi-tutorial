@@ -8,7 +8,7 @@ from app.core.logger import logger
 from app.core.redis import redis_cache, key_builder
 from app.core.errors import error
 from app.core.db.session import AsyncScopedSession
-from app.models.schemas.common import BaseResponse, HttpResponse
+from app.models.schemas.common import BaseResponse, HttpResponse, ErrorResponse
 from app.models.schemas.class_ import (
     ClassReq,
     ClassResp,
@@ -20,7 +20,11 @@ from app.models.db.class_ import Class, ClassNotice
 router = APIRouter()
 
 
-@router.post("", response_model=BaseResponse[ClassResp])
+@router.post(
+    "",
+    response_model=BaseResponse[ClassResp],
+    responses={400: {"model": ErrorResponse}},
+)
 async def create_class(
     request_body: ClassReq,
 ) -> BaseResponse[ClassResp]:
@@ -54,7 +58,11 @@ async def create_class(
     )
 
 
-@router.get("/list", response_model=BaseResponse[List[ClassResp]])
+@router.get(
+    "/list",
+    response_model=BaseResponse[List[ClassResp]],
+    responses={400: {"model": ErrorResponse}},
+)
 async def read_class_list() -> BaseResponse[List[ClassResp]]:
     _key = key_builder("read_class_list")
 
@@ -67,7 +75,8 @@ async def read_class_list() -> BaseResponse[List[ClassResp]]:
             stmt = select(Class)
             result = (await session.execute(stmt)).scalars().all()
 
-        await redis_cache.set(_key, result, ttl=60)
+        if result:
+            await redis_cache.set(_key, result, ttl=60)
 
     return HttpResponse(
         content=[
@@ -82,7 +91,11 @@ async def read_class_list() -> BaseResponse[List[ClassResp]]:
     )
 
 
-@router.get("/{class_id}", response_model=BaseResponse[ClassResp])
+@router.get(
+    "/{class_id}",
+    response_model=BaseResponse[ClassResp],
+    responses={400: {"model": ErrorResponse}},
+)
 async def read_class(
     class_id: str,
 ) -> BaseResponse[ClassResp]:
@@ -97,7 +110,8 @@ async def read_class(
             stmt = select(Class).where(Class.class_id == class_id)
             result = (await session.execute(stmt)).scalar()
 
-        await redis_cache.set(_key, result, ttl=60)
+        if result:
+            await redis_cache.set(_key, result, ttl=60)
 
     if result is None:
         raise error.ClassNotFoundException()
@@ -112,7 +126,11 @@ async def read_class(
     )
 
 
-@router.post("/notice/{class_id}", response_model=BaseResponse[ClassNoticeResp])
+@router.post(
+    "/notice/{class_id}",
+    response_model=BaseResponse[ClassNoticeResp],
+    responses={400: {"model": ErrorResponse}},
+)
 async def create_class_notice(
     class_id: str,
     request_body: ClassNoticeReq,
@@ -144,7 +162,9 @@ async def create_class_notice(
 
 
 @router.get(
-    "/notice/{class_id}/list", response_model=BaseResponse[List[ClassNoticeResp]]
+    "/notice/{class_id}/list",
+    response_model=BaseResponse[List[ClassNoticeResp]],
+    responses={400: {"model": ErrorResponse}},
 )
 async def read_class_notice_list(
     class_id: str,
@@ -164,7 +184,8 @@ async def read_class_notice_list(
             )
             result = (await session.execute(stmt)).scalars().all()
 
-        await redis_cache.set(_key, result, ttl=60)
+        if result:
+            await redis_cache.set(_key, result, ttl=60)
 
     if not result:
         raise error.ClassNoticeNotFound()
@@ -183,12 +204,16 @@ async def read_class_notice_list(
     )
 
 
-@router.put("/notice/{class_id}/{notice_id}", response_model=ClassNoticeResp)
+@router.put(
+    "/notice/{class_id}/{notice_id}",
+    response_model=BaseResponse[ClassNoticeResp],
+    responses={400: {"model": ErrorResponse}},
+)
 async def update_class_notice(
     class_id: str,
     notice_id: int,
     request_body: ClassNoticeReq,
-) -> ClassNoticeResp:
+) -> BaseResponse[ClassNoticeResp]:
     async with AsyncScopedSession() as session:
         try:
             stmt = (
@@ -218,11 +243,15 @@ async def update_class_notice(
     )
 
 
-@router.delete("/notice/{class_id}/{notice_id}", response_model=ClassNoticeResp)
+@router.delete(
+    "/notice/{class_id}/{notice_id}",
+    response_model=BaseResponse[ClassNoticeResp],
+    responses={400: {"model": ErrorResponse}},
+)
 async def delete_class_notice(
     class_id: str,
     notice_id: int,
-) -> ClassNoticeResp:
+) -> BaseResponse[ClassNoticeResp]:
     async with AsyncScopedSession() as session:
         try:
             stmt = (

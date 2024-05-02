@@ -12,6 +12,11 @@ class BaseResponse(BaseModel, Generic[T]):
     data: Optional[T] = None
 
 
+class ErrorResponse(BaseModel):
+    message: str
+    statusCode: str
+
+
 class HttpResponse(ORJSONResponse):
     def __init__(self, content: Optional[T] = None, **kwargs):
         super().__init__(

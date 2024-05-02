@@ -10,6 +10,10 @@ class BaseResponse(BaseModel, Generic[T]):
     message: str = "OK"
     statusCode: str = "200"
     data: Optional[T] = None
+    
+class ErrorResponse(BaseModel):
+    message: str
+    statusCode : str
 
 
 class HttpResponse(ORJSONResponse):

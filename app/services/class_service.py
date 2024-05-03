@@ -1,7 +1,12 @@
 from typing import List
 
 from app import repositories
-from app.models.dtos.class_ import ClassDTO, ClassNoticeDTO
+from app.models.dtos.class_ import (
+    ClassDTO,
+    ClassNoticeDTO,
+    ClassListDTO,
+    ClassNoticeListDTO,
+)
 from app.core.errors import error
 
 
@@ -16,8 +21,8 @@ class ClassService:
             teacher_id=class_dto.teacher_id,
         )
 
-    async def read_class_list(self) -> List[ClassDTO]:
-        return await self.class_repository.read_class_list()
+    async def read_class_list(self, page: int, limit: int) -> ClassListDTO:
+        return await self.class_repository.read_class_list(page=page, limit=limit)
 
     async def read_class(self, class_id: str) -> ClassDTO:
         result = await self.class_repository.read_class(class_id=class_id)
@@ -34,8 +39,12 @@ class ClassService:
             class_id=class_notice_dto.class_id, message=class_notice_dto.message
         )
 
-    async def read_class_notice_list(self, class_id: str) -> List[ClassNoticeDTO]:
-        return await self.class_repository.read_class_notice_list(class_id=class_id)
+    async def read_class_notice_list(
+        self, class_id: str, page: int, limit: int
+    ) -> ClassNoticeListDTO:
+        return await self.class_repository.read_class_notice_list(
+            class_id=class_id, page=page, limit=limit
+        )
 
     async def update_class_notice(
         self, class_notice_dto: ClassNoticeDTO

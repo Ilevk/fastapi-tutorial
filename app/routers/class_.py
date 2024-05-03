@@ -5,8 +5,10 @@ from app.models.schemas.common import BaseResponse, HttpResponse, ErrorResponse
 from app.models.schemas.class_ import (
     ClassReq,
     ClassResp,
+    ClassListResp,
     ClassNoticeReq,
     ClassNoticeResp,
+    ClassNoticeListResp,
 )
 from app import repositories
 from app import services
@@ -30,14 +32,17 @@ async def create_class(
 
 @router.get(
     "/list",
-    response_model=BaseResponse[List[ClassResp]],
+    response_model=BaseResponse[ClassListResp],
     responses={400: {"model": ErrorResponse}},
 )
-async def read_class_list() -> BaseResponse[List[ClassResp]]:
+async def read_class_list(
+    page: int = 1,
+    limit: int = 10,
+) -> BaseResponse[ClassListResp]:
     class_service = services.ClassService(repositories.ClassRepository())
-    result = await class_service.read_class_list()
+    result = await class_service.read_class_list(page, limit)
 
-    return HttpResponse(content=[ClassResp.from_dto(class_) for class_ in result])
+    return HttpResponse(content=ClassListResp.from_dto(result))
 
 
 @router.get(
@@ -71,16 +76,18 @@ async def create_class_notice(
 
 @router.get(
     "/notice/{class_id}/list",
-    response_model=BaseResponse[List[ClassNoticeResp]],
+    response_model=BaseResponse[ClassNoticeListResp],
     responses={400: {"model": ErrorResponse}},
 )
 async def read_class_notice_list(
     class_id: str,
-) -> BaseResponse[List[ClassNoticeResp]]:
+    page: int = 1,
+    limit: int = 10,
+) -> BaseResponse[ClassNoticeListResp]:
     class_service = services.ClassService(repositories.ClassRepository())
-    result = await class_service.read_class_notice_list(class_id)
+    result = await class_service.read_class_notice_list(class_id, page, limit)
 
-    return HttpResponse(content=[ClassNoticeResp.from_dto(notice) for notice in result])
+    return HttpResponse(content=ClassNoticeListResp.from_dto(result))
 
 
 @router.put(

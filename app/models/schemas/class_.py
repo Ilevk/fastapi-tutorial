@@ -1,11 +1,17 @@
 from uuid import uuid4
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
 
-from app.models.dtos.class_ import ClassDTO, ClassNoticeDTO
+from app.models.dtos.class_ import (
+    ClassDTO,
+    ClassNoticeDTO,
+    ClassListDTO,
+    ClassNoticeListDTO,
+)
+from app.models.schemas.common import PageResp
 
 
 class ClassReq(BaseModel):
@@ -37,6 +43,19 @@ class ClassResp:
         )
 
 
+@dataclass
+class ClassListResp:
+    data: List[ClassResp] = Field(..., title="Data")
+    page: PageResp = Field(..., title="Page")
+
+    @classmethod
+    def from_dto(cls, dto: ClassListDTO) -> "ClassListResp":
+        return cls(
+            data=[ClassResp.from_dto(class_) for class_ in dto.data],
+            page=PageResp.from_dto(dto.page),
+        )
+
+
 class ClassNoticeReq(BaseModel):
     message: str = Field(..., title="Message")
 
@@ -64,4 +83,17 @@ class ClassNoticeResp:
             message=dto.message,
             createdAt=dto.created_at,
             updatedAt=dto.updated_at,
+        )
+
+
+@dataclass
+class ClassNoticeListResp:
+    data: List[ClassNoticeResp] = Field(..., title="Data")
+    page: PageResp = Field(..., title="Page")
+
+    @classmethod
+    def from_dto(cls, dto: ClassNoticeListDTO) -> "ClassNoticeListResp":
+        return cls(
+            data=[ClassNoticeResp.from_dto(class_notice) for class_notice in dto.data],
+            page=PageResp.from_dto(dto.page),
         )

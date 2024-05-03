@@ -1,13 +1,19 @@
 from typing import List, Optional
 
-from sqlalchemy import select, insert, update, delete
+from sqlalchemy import select, insert, update, delete, func
 
 from app.core.logger import logger
 from app.core.redis import RedisCacheDecorator
 from app.core.errors import error
 from app.core.db.session import AsyncScopedSession
 from app.models.db.class_ import Class, ClassNotice
-from app.models.dtos.class_ import ClassDTO, ClassNoticeDTO
+from app.models.dtos.common import PageDTO
+from app.models.dtos.class_ import (
+    ClassDTO,
+    ClassNoticeDTO,
+    ClassListDTO,
+    ClassNoticeListDTO,
+)
 
 
 class ClassRepository:
@@ -42,21 +48,33 @@ class ClassRepository:
         )
 
     @RedisCacheDecorator()
-    async def read_class_list(self) -> List[ClassDTO]:
+    async def read_class_list(self, page: int, limit: int) -> ClassListDTO:
         async with AsyncScopedSession() as session:
-            stmt = select(Class)
-
-            results = (await session.execute(stmt)).scalars().all()
-
-        return [
-            ClassDTO(
-                class_id=result.class_id,
-                class_name=result.class_name,
-                teacher_id=result.teacher_id,
-                created_at=result.created_at,
+            stmt = (
+                select(Class, func.count().over().label("total"))
+                .limit(limit)
+                .offset((page - 1) * limit if page > 1 else 0)
+                .order_by(Class.created_at.desc())
             )
-            for result in results
-        ]
+
+            results: List[List[Class, int]] = (await session.execute(stmt)).all()
+
+        data = []
+        page = PageDTO(page=page, limit=limit, total=0)
+
+        if results:
+            for row, total in results:
+                data.append(
+                    ClassDTO(
+                        class_id=row.class_id,
+                        class_name=row.class_name,
+                        teacher_id=row.teacher_id,
+                        created_at=row.created_at,
+                    )
+                )
+            page.total = total
+
+        return ClassListDTO(data=data, page=page)
 
     @RedisCacheDecorator()
     async def read_class(self, class_id: str) -> Optional[ClassDTO]:
@@ -103,22 +121,37 @@ class ClassRepository:
         )
 
     @RedisCacheDecorator()
-    async def read_class_notice_list(self, class_id) -> List[ClassNoticeDTO]:
+    async def read_class_notice_list(
+        self, class_id: str, page: int, limit: int
+    ) -> ClassNoticeListDTO:
         async with AsyncScopedSession() as session:
-            stmt = select(ClassNotice).where(ClassNotice.class_id == class_id)
-
-            result = (await session.execute(stmt)).scalars().all()
-
-        return [
-            ClassNoticeDTO(
-                notice_id=result.id,
-                class_id=result.class_id,
-                message=result.message,
-                created_at=result.created_at,
-                updated_at=result.updated_at,
+            stmt = (
+                select(ClassNotice, func.count().over().label("total"))
+                .where(ClassNotice.class_id == class_id)
+                .limit(limit)
+                .offset((page - 1) * limit if page > 1 else 0)
+                .order_by(ClassNotice.created_at.desc())
             )
-            for result in result
-        ]
+
+            results: List[List[ClassNotice, int]] = (await session.execute(stmt)).all()
+
+        data = []
+        page = PageDTO(page=page, limit=limit, total=0)
+
+        if results:
+            for row, total in results:
+                data.append(
+                    ClassNoticeDTO(
+                        notice_id=row.id,
+                        class_id=row.class_id,
+                        message=row.message,
+                        created_at=row.created_at,
+                        updated_at=row.updated_at,
+                    )
+                )
+            page.total = total
+
+        return ClassNoticeListDTO(data=data, page=page)
 
     async def update_class_notice(
         self, class_id: str, notice_id: int, message: str

@@ -1,6 +1,10 @@
-from pydantic import BaseModel
 from typing import Generic, Optional, TypeVar, Optional
+
+from pydantic import BaseModel
+from pydantic.dataclasses import dataclass
 from fastapi.responses import ORJSONResponse
+
+from app.models.dtos.common import PageDTO
 
 
 T = TypeVar("T")
@@ -26,4 +30,19 @@ class HttpResponse(ORJSONResponse):
                 "data": content,
             },
             **kwargs
+        )
+
+
+@dataclass
+class PageResp:
+    total: int
+    page: int
+    limit: int
+
+    @classmethod
+    def from_dto(cls, dto: PageDTO) -> "PageResp":
+        return cls(
+            total=dto.total,
+            page=dto.page,
+            limit=dto.limit,
         )

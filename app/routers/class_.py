@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter
 from app.models.schemas.common import BaseResponse, HttpResponse, ErrorResponse
 from app.models.schemas.class_ import (

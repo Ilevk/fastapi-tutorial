@@ -1,7 +1,7 @@
 # app/core/db/session.py
 from sqlalchemy.orm import DeclarativeBase
-
-from asyncio import current_task
+from starlette_context import context
+# from asyncio import current_task
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -14,6 +14,8 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import config, is_local
 
+def get_session_id():
+    return context.get("session_id")
 
 class Base(DeclarativeBase): ...
 
@@ -26,7 +28,7 @@ async_session_factory = async_sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
 )
 
-AsyncScopedSession = async_scoped_session(async_session_factory, scopefunc=current_task)
+AsyncScopedSession = async_scoped_session(async_session_factory, scopefunc=get_session_id)
 
 
 async def ping_db():

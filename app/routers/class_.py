@@ -1,4 +1,7 @@
 from fastapi import APIRouter
+
+from app import services
+from app import repositories
 from app.models.schemas.common import BaseResponse, HttpResponse, ErrorResponse
 from app.models.schemas.class_ import (
     ClassReq,
@@ -8,8 +11,6 @@ from app.models.schemas.class_ import (
     ClassNoticeResp,
     ClassNoticeListResp,
 )
-from app import repositories
-from app import services
 
 router = APIRouter()
 

@@ -3,8 +3,10 @@ from uuid import uuid4
 from fastapi import APIRouter
 from sqlalchemy import insert
 
+from app.core.errors import error
+from app.core.logger import logger
 from app.core.db.session import AsyncScopedSession
-from app.models.schemas.common import BaseResponse, HttpResponse
+from app.models.schemas.common import BaseResponse, HttpResponse, ErrorResponse
 from app.models.schemas.user import UserReq, UserResp
 from app.models.db.student import Student
 from app.models.db.teacher import Teacher
@@ -12,20 +14,29 @@ from app.models.db.teacher import Teacher
 router = APIRouter()
 
 
-@router.post("/teacher", response_model=BaseResponse[UserResp])
+@router.post(
+    "/teacher",
+    response_model=BaseResponse[UserResp],
+    responses={400: {"model": ErrorResponse}},
+)
 async def create_teacher(
     request_body: UserReq,
 ) -> BaseResponse[UserResp]:
     user_id = uuid4().hex
     async with AsyncScopedSession() as session:
-        stmt = (
-            insert(Teacher)
-            .values(teacher_id=user_id, teacher_name=request_body.userName)
-            .returning(Teacher)
-        )
+        try:
+            stmt = (
+                insert(Teacher)
+                .values(teacher_id=user_id, teacher_name=request_body.userName)
+                .returning(Teacher)
+            )
 
-        result: Teacher = (await session.execute(stmt)).scalar()
-        await session.commit()
+            result: Teacher = (await session.execute(stmt)).scalar()
+            await session.commit()
+        except Exception as e:
+            logger.error(e)
+            await session.rollback()
+            raise error.UserCreationFailed()
 
     return HttpResponse(
         content=UserResp(
@@ -37,20 +48,29 @@ async def create_teacher(
     )
 
 
-@router.post("/student", response_model=BaseResponse[UserResp])
+@router.post(
+    "/student",
+    response_model=BaseResponse[UserResp],
+    responses={400: {"model": ErrorResponse}},
+)
 async def create_student(
     request_body: UserReq,
 ) -> BaseResponse[UserResp]:
     user_id = uuid4().hex
     async with AsyncScopedSession() as session:
-        stmt = (
-            insert(Student)
-            .values(student_id=user_id, student_name=request_body.userName)
-            .returning(Student)
-        )
+        try:
+            stmt = (
+                insert(Student)
+                .values(student_id=user_id, student_name=request_body.userName)
+                .returning(Student)
+            )
 
-        result: Student = (await session.execute(stmt)).scalar()
-        await session.commit()
+            result: Student = (await session.execute(stmt)).scalar()
+            await session.commit()
+        except Exception as e:
+            logger.error(e)
+            await session.rollback()
+            raise error.UserCreationFailed()
 
     return HttpResponse(
         content=UserResp(

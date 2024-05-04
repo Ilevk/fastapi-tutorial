@@ -36,22 +36,27 @@ class RedisCacheDecorator:
     def __init__(self, ttl: int = 60):
         self.ttl = ttl
 
-    def key_builder(self, *args) -> str:
-        return ":".join(map(str, args))
+    def key_builder(self, f, kwargs) -> str:
+        return f"{f.__name__}.{str(kwargs)}"
 
     def __call__(self, func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            _key = self.key_builder(func.__name__, *args, *kwargs)
+            _key = self.key_builder(func, kwargs=kwargs)
 
-            if await redis_cache.exists(_key):
-                logger.debug("Cache hit")
-                result = await redis_cache.get(_key)
-            else:
-                logger.debug("Cache miss")
+            try:
+                if await redis_cache.exists(_key):
+                    logger.debug("Cache hit")
+                    result = await redis_cache.get(_key)
+                else:
+                    logger.debug("Cache miss")
+                    result = await func(*args, **kwargs)
+                    if result:
+                        logger.debug("Setting cache")
+                        await redis_cache.set(_key, result, ttl=self.ttl)
+            except Exception as e:
+                logger.error(f"Error in cache decorator: {e}")
                 result = await func(*args, **kwargs)
-                if result:
-                    await redis_cache.set(_key, result, ttl=self.ttl)
 
             return result
 

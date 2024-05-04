@@ -1,6 +1,6 @@
 from typing import Generic, Optional, TypeVar, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
 from fastapi.responses import ORJSONResponse
 
@@ -35,9 +35,9 @@ class HttpResponse(ORJSONResponse):
 
 @dataclass
 class PageResp:
-    total: int
-    page: int
-    limit: int
+    total: int = Field(..., description="Total number of items")
+    page: int = Field(..., description="Page number")
+    limit: int = Field(..., description="Number of items per page")
 
     @classmethod
     def from_dto(cls, dto: PageDTO) -> "PageResp":

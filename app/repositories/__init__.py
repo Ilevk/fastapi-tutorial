@@ -1,0 +1,2 @@
+from app.repositories.class_repository import ClassRepository
+from app.repositories.user_repository import UserRepository

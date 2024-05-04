@@ -15,7 +15,7 @@ router = APIRouter()
     responses={400: {"model": ErrorResponse}},
 )
 async def create_teacher(
-    request_body: UserReq = Body(..., title="Teacher creation request body")
+    request_body: UserReq = Body(..., description="Teacher creation request body")
 ) -> BaseResponse[UserResp]:
     user_service = services.UserService(repositories.UserRepository())
     result = await user_service.create_teacher_user(
@@ -31,7 +31,7 @@ async def create_teacher(
     responses={400: {"model": ErrorResponse}},
 )
 async def create_student(
-    request_body: UserReq = Body(..., title="Student creation request body")
+    request_body: UserReq = Body(..., description="Student creation request body")
 ) -> BaseResponse[UserResp]:
     user_service = services.UserService(repositories.UserRepository())
     result = await user_service.create_student_user(

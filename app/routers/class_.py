@@ -1,21 +1,16 @@
-from uuid import uuid4
-from typing import List
+from fastapi import APIRouter, Query, Path, Body
 
-from fastapi import APIRouter
-from sqlalchemy import select, insert, update, delete
-
-from app.core.errors import error
-from app.core.logger import logger
-from app.core.redis import redis_cache, key_builder
-from app.core.db.session import AsyncScopedSession
-from app.models.schemas.common import BaseResponse, HttpResponse, ErrorReseponse
+from app import services
+from app import repositories
+from app.models.schemas.common import BaseResponse, HttpResponse, ErrorResponse
 from app.models.schemas.class_ import (
     ClassReq,
     ClassResp,
+    ClassListResp,
     ClassNoticeReq,
     ClassNoticeResp,
+    ClassNoticeListResp,
 )
-from app.models.db.class_ import Class, ClassNotice
 
 router = APIRouter()
 
@@ -23,251 +18,107 @@ router = APIRouter()
 @router.post(
     "",
     response_model=BaseResponse[ClassResp],
-    responses={400: {"model": ErrorReseponse}},
+    responses={400: {"model": ErrorResponse}},
 )
 async def create_class(
-    request_body: ClassReq,
+    request_body: ClassReq = Body(..., title="Class creation request body"),
 ) -> BaseResponse[ClassResp]:
-    class_id = uuid4().hex
-    async with AsyncScopedSession() as session:
-        try:
-            stmt = (
-                insert(Class)
-                .values(
-                    class_id=class_id,
-                    class_name=request_body.className,
-                    teacher_id=request_body.teacherId,
-                )
-                .returning(Class)
-            )
+    class_service = services.ClassService(repositories.ClassRepository())
+    result = await class_service.create_class(request_body.to_dto())
 
-            result: Class = (await session.execute(stmt)).scalar()
-            await session.commit()
-        except Exception as e:
-            logger.error(e)
-            await session.rollback()
-            raise error.ClassCreationFailed()
-
-    return HttpResponse(
-        content=ClassResp(
-            classId=result.class_id,
-            className=result.class_name,
-            teacherId=result.teacher_id,
-            createdAt=result.created_at,
-        )
-    )
+    return HttpResponse(content=ClassResp.from_dto(result))
 
 
 @router.get(
     "/list",
-    response_model=BaseResponse[List[ClassResp]],
-    responses={400: {"model": ErrorReseponse}},
+    response_model=BaseResponse[ClassListResp],
+    responses={400: {"model": ErrorResponse}},
 )
-async def read_class_list() -> BaseResponse[List[ClassResp]]:
-    _key = key_builder("read_class_list")
+async def read_class_list(
+    page: int = Query(1, ge=1, title="Page number"),
+    limit: int = Query(10, ge=10, le=100, title="Number of items per page"),
+) -> BaseResponse[ClassListResp]:
+    class_service = services.ClassService(repositories.ClassRepository())
+    result = await class_service.read_class_list(page, limit)
 
-    if await redis_cache.exists(_key):
-        result = await redis_cache.get(_key)
-        logger.debug(f"Cache hit: {_key}")
-    else:
-        async with AsyncScopedSession() as session:
-            stmt = select(Class)
-            result = (await session.execute(stmt)).scalars().all()
-
-        await redis_cache.set(_key, result, ttl=60)
-        logger.debug(f"Cache miss: {_key}")
-
-    return HttpResponse(
-        content=[
-            ClassResp(
-                classId=class_.class_id,
-                className=class_.class_name,
-                teacherId=class_.teacher_id,
-                createdAt=class_.created_at,
-            )
-            for class_ in result
-        ]
-    )
+    return HttpResponse(content=ClassListResp.from_dto(result))
 
 
 @router.get(
     "/{class_id}",
     response_model=BaseResponse[ClassResp],
-    responses={400: {"model": ErrorReseponse}},
+    responses={400: {"model": ErrorResponse}},
 )
 async def read_class(
-    class_id: str,
+    class_id: str = Path(..., title="Class ID")
 ) -> BaseResponse[ClassResp]:
-    _key = key_builder("read_class", class_id)
+    class_service = services.ClassService(repositories.ClassRepository())
+    result = await class_service.read_class(class_id)
 
-    if await redis_cache.exists(_key):
-        result = await redis_cache.get(_key)
-        logger.debug(f"Cache hit: {_key}")
-    else:
-        async with AsyncScopedSession() as session:
-            stmt = select(Class).where(Class.class_id == class_id)
-            result = (await session.execute(stmt)).scalar()
-
-        if result is not None:
-            await redis_cache.set(_key, result, ttl=60)
-        logger.debug(f"Cache miss: {_key}")
-
-    if result is None:
-        raise error.ClassNotFoundException()
-
-    return HttpResponse(
-        content=ClassResp(
-            classId=result.class_id,
-            className=result.class_name,
-            teacherId=result.teacher_id,
-            createdAt=result.created_at,
-        )
-    )
+    return HttpResponse(content=ClassResp.from_dto(result))
 
 
 @router.post(
     "/notice/{class_id}",
     response_model=BaseResponse[ClassNoticeResp],
-    responses={400: {"model": ErrorReseponse}},
+    responses={400: {"model": ErrorResponse}},
 )
 async def create_class_notice(
-    class_id: str,
-    request_body: ClassNoticeReq,
+    class_id: str = Path(..., title="Class ID"),
+    request_body: ClassNoticeReq = Body(
+        ..., title="Class notice creation request body"
+    ),
 ) -> BaseResponse[ClassNoticeResp]:
-    async with AsyncScopedSession() as session:
-        try:
-            stmt = (
-                insert(ClassNotice)
-                .values(class_id=class_id, message=request_body.message)
-                .returning(ClassNotice)
-            )
+    class_service = services.ClassService(repositories.ClassRepository())
+    result = await class_service.create_class_notice(request_body.to_dto(class_id))
 
-            result: ClassNotice = (await session.execute(stmt)).scalar()
-            await session.commit()
-        except Exception as e:
-            logger.error(e)
-            await session.rollback()
-            raise error.ClassNoticeCreationFailed()
-
-    return HttpResponse(
-        content=ClassNoticeResp(
-            id=result.id,
-            classId=result.class_id,
-            message=result.message,
-            createdAt=result.created_at,
-            updatedAt=result.updated_at,
-        )
-    )
+    return HttpResponse(content=ClassNoticeResp.from_dto(result))
 
 
 @router.get(
     "/notice/{class_id}/list",
-    response_model=BaseResponse[List[ClassNoticeResp]],
-    responses={400: {"model": ErrorReseponse}},
+    response_model=BaseResponse[ClassNoticeListResp],
+    responses={400: {"model": ErrorResponse}},
 )
 async def read_class_notice_list(
-    class_id: str,
-) -> BaseResponse[List[ClassNoticeResp]]:
-    _key = key_builder("read_class_notice_list", class_id)
+    class_id: str = Path(..., title="Class ID"),
+    page: int = Query(1, ge=1, title="Page number"),
+    limit: int = Query(10, ge=10, le=100, title="Number of items per page"),
+) -> BaseResponse[ClassNoticeListResp]:
+    class_service = services.ClassService(repositories.ClassRepository())
+    result = await class_service.read_class_notice_list(class_id, page, limit)
 
-    if await redis_cache.exists(_key):
-        logger.debug("Cache hit")
-        result = await redis_cache.get(_key)
-    else:
-        logger.debug("Cache miss")
-        async with AsyncScopedSession() as session:
-            stmt = (
-                select(ClassNotice)
-                .where(ClassNotice.class_id == class_id)
-                .order_by(ClassNotice.created_at.desc())
-            )
-            result = (await session.execute(stmt)).scalars().all()
-
-        if result:
-            await redis_cache.set(_key, result, ttl=60)
-
-    if not result:
-        raise error.ClassNoticeNotFound()
-
-    return HttpResponse(
-        content=[
-            ClassNoticeResp(
-                id=notice.id,
-                classId=notice.class_id,
-                message=notice.message,
-                createdAt=notice.created_at,
-                updatedAt=notice.updated_at,
-            )
-            for notice in result
-        ]
-    )
+    return HttpResponse(content=ClassNoticeListResp.from_dto(result))
 
 
 @router.put(
     "/notice/{class_id}/{notice_id}",
-    response_model=ClassNoticeResp,
-    responses={400: {"model": ErrorReseponse}},
+    response_model=BaseResponse[ClassNoticeResp],
+    responses={400: {"model": ErrorResponse}},
 )
 async def update_class_notice(
-    class_id: str,
-    notice_id: int,
-    request_body: ClassNoticeReq,
-) -> ClassNoticeResp:
-    async with AsyncScopedSession() as session:
-        try:
-            stmt = (
-                update(ClassNotice)
-                .where(ClassNotice.id == notice_id, ClassNotice.class_id == class_id)
-                .values(message=request_body.message)
-                .returning(ClassNotice)
-            )
-            result: ClassNotice = (await session.execute(stmt)).scalar()
-            await session.commit()
-        except Exception as e:
-            logger.error(e)
-            await session.rollback()
-            raise error.ClassNoticeUpdateFailed()
-
-    return HttpResponse(
-        content=ClassNoticeResp(
-            id=result.id,
-            classId=result.class_id,
-            message=result.message,
-            createdAt=result.created_at,
-            updatedAt=result.updated_at,
-        )
+    class_id: str = Path(..., title="Class ID"),
+    notice_id: int = Path(..., title="Notice ID"),
+    request_body: ClassNoticeReq = Body(..., title="Class notice update request body"),
+) -> BaseResponse[ClassNoticeResp]:
+    class_service = services.ClassService(repositories.ClassRepository())
+    result = await class_service.update_class_notice(
+        request_body.to_dto(class_id, notice_id)
     )
+
+    return HttpResponse(content=ClassNoticeResp.from_dto(result))
 
 
 @router.delete(
     "/notice/{class_id}/{notice_id}",
-    response_model=ClassNoticeResp,
-    responses={400: {"model": ErrorReseponse}},
+    response_model=BaseResponse[ClassNoticeResp],
+    responses={400: {"model": ErrorResponse}},
 )
 async def delete_class_notice(
-    class_id: str,
-    notice_id: int,
-) -> ClassNoticeResp:
-    async with AsyncScopedSession() as session:
-        try:
-            stmt = (
-                delete(ClassNotice)
-                .where(ClassNotice.id == notice_id, ClassNotice.class_id == class_id)
-                .returning(ClassNotice)
-            )
-            result: ClassNotice = (await session.execute(stmt)).scalar()
-            await session.commit()
-        except Exception as e:
-            logger.error(e)
-            await session.rollback()
-            raise error.ClassNoticeDeleteFailed()
+    class_id: str = Path(..., title="Class ID"),
+    notice_id: int = Path(..., title="Notice ID"),
+) -> BaseResponse[ClassNoticeResp]:
+    class_service = services.ClassService(repositories.ClassRepository())
+    result = await class_service.delete_class_notice(class_id, notice_id)
 
-    return HttpResponse(
-        content=ClassNoticeResp(
-            id=result.id,
-            classId=result.class_id,
-            message=result.message,
-            createdAt=result.created_at,
-            updatedAt=result.updated_at,
-        )
-    )
+    return HttpResponse(content=ClassNoticeResp.from_dto(result))

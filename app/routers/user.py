@@ -1,62 +1,41 @@
-from uuid import uuid4
+from fastapi import APIRouter, Body
 
-from fastapi import APIRouter
-from sqlalchemy import insert
-
-from app.core.db.session import AsyncScopedSession
-from app.models.schemas.common import BaseResponse, HttpResponse
+from app import services
+from app import repositories
+from app.models.constant import UserRole
+from app.models.schemas.common import BaseResponse, HttpResponse, ErrorResponse
 from app.models.schemas.user import UserReq, UserResp
-from app.models.db.student import Student
-from app.models.db.teacher import Teacher
 
 router = APIRouter()
 
 
-@router.post("/teacher", response_model=BaseResponse[UserResp])
+@router.post(
+    "/teacher",
+    response_model=BaseResponse[UserResp],
+    responses={400: {"model": ErrorResponse}},
+)
 async def create_teacher(
-    request_body: UserReq,
+    request_body: UserReq = Body(..., title="Teacher creation request body")
 ) -> BaseResponse[UserResp]:
-    user_id = uuid4().hex
-    async with AsyncScopedSession() as session:
-        stmt = (
-            insert(Teacher)
-            .values(teacher_id=user_id, teacher_name=request_body.userName)
-            .returning(Teacher)
-        )
-
-        result: Teacher = (await session.execute(stmt)).scalar()
-        await session.commit()
-
-    return HttpResponse(
-        content=UserResp(
-            userId=result.teacher_id,
-            userName=result.teacher_name,
-            userRole="teacher",
-            createdAt=result.created_at,
-        )
+    user_service = services.UserService(repositories.UserRepository())
+    result = await user_service.create_teacher_user(
+        request_body.to_dto(user_role=UserRole.TEACHER)
     )
 
+    return HttpResponse(content=UserResp.from_dto(result))
 
-@router.post("/student", response_model=BaseResponse[UserResp])
+
+@router.post(
+    "/student",
+    response_model=BaseResponse[UserResp],
+    responses={400: {"model": ErrorResponse}},
+)
 async def create_student(
-    request_body: UserReq,
+    request_body: UserReq = Body(..., title="Student creation request body")
 ) -> BaseResponse[UserResp]:
-    user_id = uuid4().hex
-    async with AsyncScopedSession() as session:
-        stmt = (
-            insert(Student)
-            .values(student_id=user_id, student_name=request_body.userName)
-            .returning(Student)
-        )
-
-        result: Student = (await session.execute(stmt)).scalar()
-        await session.commit()
-
-    return HttpResponse(
-        content=UserResp(
-            userId=result.student_id,
-            userName=result.student_name,
-            userRole="student",
-            createdAt=result.created_at,
-        )
+    user_service = services.UserService(repositories.UserRepository())
+    result = await user_service.create_student_user(
+        request_body.to_dto(user_role=UserRole.STUDENT)
     )
+
+    return HttpResponse(content=UserResp.from_dto(result))

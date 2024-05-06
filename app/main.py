@@ -6,7 +6,7 @@ from app.core.config import config
 from app.core.lifespan import lifespan
 from app.core.container import Container
 from app.core.middlewares.sqlalchemy import SQLAlchemyMiddleware
-from app.core.errors.error import BaseAPIException, BaseAuthExeption
+from app.core.errors.error import BaseAPIException, BaseAuthException
 from app.core.errors.handler import api_error_handler, api_auth_error_handler
 from app.routers import router
 
@@ -18,7 +18,7 @@ def create_app(container=Container()) -> FastAPI:
 
     app.include_router(router)
     app.add_exception_handler(BaseAPIException, api_error_handler)
-    app.add_exception_handler(BaseAuthExeption, api_auth_error_handler)
+    app.add_exception_handler(BaseAuthException, api_auth_error_handler)
 
     app.add_middleware(
         CORSMiddleware,

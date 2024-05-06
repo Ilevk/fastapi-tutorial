@@ -15,13 +15,13 @@ class BaseAPIException(Exception):
         self.message = message
 
 
-class BaseAuthExeption(Exception):
+class BaseAuthException(Exception):
     def __init__(self, code: str, message: str):
         self.code = code
         self.message = message
 
 
-class InvalidAPIKey(BaseAuthExeption):
+class InvalidAPIKey(BaseAuthException):
     def __init__(self):
         super().__init__(code=ERROR_401_INVALID_API_KEY, message="Invalid API Key")
 

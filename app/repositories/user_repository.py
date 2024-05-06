@@ -35,7 +35,7 @@ class UserRepository:
         return UserDTO(
             user_id=result.student_id,
             user_name=result.student_name,
-            user_role=user_role.value,
+            user_role=user_role,
             created_at=result.created_at,
         )
 
@@ -62,7 +62,7 @@ class UserRepository:
 
         return UserDTO(
             user_id=result.teacher_id,
-            user_name=result.teacher_name_name,
-            user_role=user_role.value,
+            user_name=result.teacher_name,
+            user_role=user_role,
             created_at=result.created_at,
         )

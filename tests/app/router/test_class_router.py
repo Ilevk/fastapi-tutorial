@@ -1,5 +1,4 @@
 import pytest
-from asyncio import BaseEventLoop
 from datetime import datetime
 
 from httpx import AsyncClient
@@ -156,6 +155,64 @@ async def test_read_class_200(
     assert json_response["data"]["classId"] == class_dto.class_id
     assert json_response["data"]["className"] == class_dto.class_name
     assert json_response["data"]["teacherId"] == class_dto.teacher_id
+
+
+@pytest.mark.parametrize(
+    "expected_error",
+    [
+        (error.ERROR_400_CLASS_CREATION_FAILED),
+    ],
+)
+async def test_create_class_400(
+    async_client: AsyncClient,
+    expected_error: str,
+):
+    # Setup
+    # Request
+    data = ClassReq(
+        className="class_name",
+        teacherId="teacher_id",
+    )
+
+    # Run
+    headers = {"x-api-key": "test-api-key"}
+    url = "/v1/class"
+    response = await async_client.post(
+        url, headers=headers, data=data.model_dump_json()
+    )
+    json_response = response.json()
+
+    # Assert
+    assert response.status_code == 400
+    assert json_response["statusCode"] == expected_error
+
+
+@pytest.mark.parametrize(
+    "class_id,expected_error",
+    [
+        ("class_id", error.ERROR_400_CLASS_NOT_FOUND),
+    ],
+)
+async def test_read_class_400(
+    container: Container,
+    async_client: AsyncClient,
+    expected_error: str,
+    class_service_mock: ClassService,
+    class_id: str,
+):
+    # Setup
+    class_service_mock.class_repository.read_class.return_value = None
+    container.class_service.override(class_service_mock)
+
+    # Run
+    headers = {"x-api-key": "test-api-key"}
+    url = f"/v1/class/{class_id}"
+    response = await async_client.get(url, headers=headers)
+    json_response = response.json()
+
+    # Assert
+    assert response.status_code == 400
+    assert json_response["statusCode"] == expected_error
 
 
 @pytest.mark.parametrize(
@@ -346,3 +403,97 @@ async def test_delete_class_notice_200(
     assert json_response["data"]["id"] == class_notice_dto.notice_id
     assert json_response["data"]["classId"] == class_notice_dto.class_id
     assert json_response["data"]["message"] == class_notice_dto.message
+
+
+@pytest.mark.parametrize(
+    "class_id,message,expected_error",
+    [
+        ("class_id", "message", error.ERROR_400_CLASS_NOTICE_CREATION_FAILED),
+    ],
+)
+async def test_create_class_notice_400(
+    async_client: AsyncClient,
+    class_id: str,
+    message: str,
+    expected_error: str,
+):
+    # Setup
+    # Request
+    data = ClassNoticeReq(
+        message=message,
+    )
+
+    # Run
+    headers = {"x-api-key": "test-api-key"}
+    url = f"/v1/class/notice/{class_id}"
+    response = await async_client.post(
+        url, headers=headers, data=data.model_dump_json()
+    )
+    json_response = response.json()
+
+    # Assert
+    assert response.status_code == 400
+    assert json_response["statusCode"] == expected_error
+
+
+@pytest.mark.parametrize(
+    "class_id,notice_id,expected_error",
+    [
+        ("class_id", 1, error.ERROR_400_CLASS_NOTICE_NOT_FOUND),
+    ],
+)
+async def test_update_class_notice_400(
+    container: Container,
+    async_client: AsyncClient,
+    class_service_mock: ClassService,
+    class_id: str,
+    notice_id: int,
+    expected_error: str,
+):
+    # Setup
+    # Request
+    data = ClassNoticeReq(
+        message="message",
+    )
+
+    class_service_mock.class_repository.update_class_notice.return_value = None
+    container.class_service.override(class_service_mock)
+
+    # Run
+    headers = {"x-api-key": "test-api-key"}
+    url = f"/v1/class/notice/{class_id}/{notice_id}"
+    response = await async_client.put(url, headers=headers, data=data.model_dump_json())
+    json_response = response.json()
+
+    # Assert
+    assert response.status_code == 400
+    assert json_response["statusCode"] == expected_error
+
+
+@pytest.mark.parametrize(
+    "class_id,notice_id,expected_error",
+    [
+        ("class_id", 1, error.ERROR_400_CLASS_NOTICE_NOT_FOUND),
+    ],
+)
+async def test_delete_class_notice_400(
+    container: Container,
+    async_client: AsyncClient,
+    class_service_mock: ClassService,
+    class_id: str,
+    notice_id: int,
+    expected_error: str,
+):
+    # Setup
+    class_service_mock.class_repository.delete_class_notice.return_value = None
+    container.class_service.override(class_service_mock)
+
+    # Run
+    headers = {"x-api-key": "test-api-key"}
+    url = f"/v1/class/notice/{class_id}/{notice_id}"
+    response = await async_client.delete(url, headers=headers)
+    json_response = response.json()
+
+    # Assert
+    assert response.status_code == 400
+    assert json_response["statusCode"] == expected_error

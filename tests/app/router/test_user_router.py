@@ -1,5 +1,4 @@
 import pytest
-from asyncio import BaseEventLoop
 from datetime import datetime
 
 from httpx import AsyncClient

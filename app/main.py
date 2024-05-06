@@ -15,7 +15,7 @@ def create_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan, **config.fastapi_kwargs)
 
     container = Container()
-    container.config.from_dict(config.dict())
+    container.config.from_dict(config.model_dump())
 
     app.include_router(router)
     app.add_exception_handler(BaseAPIException, api_error_handler)

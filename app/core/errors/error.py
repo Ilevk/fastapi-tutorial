@@ -4,6 +4,7 @@ ERROR_400_CLASS_CREATION_FAILED = "40002"
 ERROR_400_CLASS_NOTICE_CREATION_FAILED = "40003"
 ERROR_400_CLASS_NOTICE_UPDATE_FAILED = "40004"
 ERROR_400_CLASS_NOTICE_DELETE_FAILED = "40005"
+ERROR_400_USER_CREATION_FAILED = "40006"
 
 ERROR_401_INVALID_API_KEY = "40100"
 
@@ -60,6 +61,13 @@ class ClassNoticeDeleteFailed(BaseAPIException):
         super().__init__(
             code=ERROR_400_CLASS_NOTICE_DELETE_FAILED,
             message="Class Notice delete failed",
+        )
+
+
+class UserCreationFailed(BaseAPIException):
+    def __init__(self):
+        super().__init__(
+            code=ERROR_400_USER_CREATION_FAILED, message="User creation failed"
         )
 
 

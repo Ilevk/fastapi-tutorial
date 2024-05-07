@@ -4,6 +4,7 @@ ERROR_400_CLASS_CREATION_FAILED = "40002"
 ERROR_400_CLASS_NOTICE_CREATION_FAILED = "40003"
 ERROR_400_CLASS_NOTICE_UPDATE_FAILED = "40004"
 ERROR_400_CLASS_NOTICE_DELETE_FAILED = "40005"
+ERROR_400_USER_CREATION_FAILED = "40006"
 
 ERROR_401_INVALID_API_KEY = "40100"
 
@@ -18,6 +19,11 @@ class BaseAuthException(Exception):
     def __init__(self, code: str, message: str):
         self.code = code
         self.message = message
+
+
+class InvalidAPIKey(BaseAuthException):
+    def __init__(self):
+        super().__init__(code=ERROR_401_INVALID_API_KEY, message="Invalid API Key")
 
 
 class ClassNotFoundException(BaseAPIException):
@@ -63,6 +69,9 @@ class ClassNoticeDeleteFailed(BaseAPIException):
         )
 
 
-class InvalidAPIKey(BaseAuthException):
+class UserCreationFailed(BaseAPIException):
     def __init__(self):
-        super().__init__(code=ERROR_401_INVALID_API_KEY, message="Invalid API Key")
+        super().__init__(
+            code=ERROR_400_USER_CREATION_FAILED,
+            message="User creation failed",
+        )

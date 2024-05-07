@@ -18,7 +18,6 @@ async def test_create_class_notice(
         message="message",
     )
     class_repository_mock.create_class_notice.return_value = class_notice_dto
-    class_service_mock.class_repository = class_repository_mock
 
     # Run
     result = await class_service_mock.create_class_notice(
@@ -51,7 +50,6 @@ async def test_read_class_notice_list(
         message="message",
     )
     class_repository_mock.read_class_notice_list.return_value = [class_notice_dto]
-    class_service_mock.class_repository = class_repository_mock
 
     # Run
     results = await class_service_mock.read_class_notice_list(
@@ -83,7 +81,6 @@ async def test_update_class_notice(
         message="message",
     )
     class_repository_mock.update_class_notice.return_value = class_notice_dto
-    class_service_mock.class_repository = class_repository_mock
 
     # Run
     result = await class_service_mock.update_class_notice(
@@ -117,7 +114,6 @@ async def test_delete_class_notice(
         message="message",
     )
     class_repository_mock.delete_class_notice.return_value = class_notice_dto
-    class_service_mock.class_repository = class_repository_mock
 
     # Run
     result = await class_service_mock.delete_class_notice(

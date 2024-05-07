@@ -19,7 +19,6 @@ async def test_create_teacher(
         user_role=UserRole.TEACHER,
     )
     user_repository_mock.create_teacher_user.return_value = user_dto
-    # user_service.user_repository = repository_mock
 
     # Run
     result = await user_service_mock.create_teacher_user(user_dto=user_dto)

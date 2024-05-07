@@ -18,7 +18,6 @@ async def test_create_class(
         teacher_id="teacher_id",
     )
     class_repository_mock.create_class.return_value = class_dto
-    class_service_mock.class_repository = class_repository_mock
 
     # Run
     result = await class_service_mock.create_class(class_dto=class_dto)
@@ -50,7 +49,6 @@ async def test_read_class_list(
         teacher_id="teacher_id",
     )
     class_repository_mock.read_class_list.return_value = [class_dto]
-    class_service_mock.class_repository = class_repository_mock
 
     # Run
     results = await class_service_mock.read_class_list(page=page, limit=limit)
@@ -81,7 +79,6 @@ async def test_read_class(
         teacher_id="teacher_id",
     )
     class_repository_mock.read_class.return_value = class_dto
-    class_service_mock.class_repository = class_repository_mock
 
     # Run
     result = await class_service_mock.read_class(class_id=class_id)

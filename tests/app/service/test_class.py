@@ -2,7 +2,8 @@ import pytest
 from unittest.mock import AsyncMock
 
 
-from app.models.dtos.class_ import ClassDTO
+from app.models.dtos.common import PageDTO
+from app.models.dtos.class_ import ClassDTO, ClassListDTO
 from app.services.class_service import ClassService
 
 
@@ -43,20 +44,34 @@ async def test_read_class_list(
     # Setup
     page = 1
     limit = 10
+    total = 1
     class_dto = ClassDTO(
         class_id="class_id",
         class_name="class_name",
         teacher_id="teacher_id",
     )
-    class_repository_mock.read_class_list.return_value = [class_dto]
+    page_dto = PageDTO(page=page, limit=limit, total=total)
+    class_list_dto = ClassListDTO(
+        data=[class_dto],
+        page=page_dto,
+    )
+
+    class_repository_mock.read_class_list.return_value = class_list_dto
 
     # Run
     results = await class_service_mock.read_class_list(page=page, limit=limit)
 
     # Assert
     assert results != None
-    assert len(results) == 1
-    result = results[0]
+
+    result_page = results.page
+    assert result_page.page == page_dto.page
+    assert result_page.limit == page_dto.limit
+    assert result_page.total == page_dto.total
+
+    result_data = results.data
+    assert len(result_data) == 1
+    result = result_data[0]
     assert result.class_id == class_dto.class_id
     assert result.class_name == class_dto.class_name
     assert result.teacher_id == class_dto.teacher_id

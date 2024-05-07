@@ -2,7 +2,8 @@ import pytest
 from unittest.mock import AsyncMock
 
 
-from app.models.dtos.class_ import ClassNoticeDTO
+from app.models.dtos.common import PageDTO
+from app.models.dtos.class_ import ClassNoticeDTO, ClassListDTO
 from app.services.class_service import ClassService
 
 
@@ -44,12 +45,18 @@ async def test_read_class_notice_list(
     class_id = "class_id"
     page = 1
     limit = 10
+    total = 1
     class_notice_dto = ClassNoticeDTO(
         class_id=class_id,
         notice_id=1,
         message="message",
     )
-    class_repository_mock.read_class_notice_list.return_value = [class_notice_dto]
+    page_dto = PageDTO(page=page, limit=limit, total=total)
+    class_notice_list_dto = ClassListDTO(
+        data=[class_notice_dto],
+        page=page_dto,
+    )
+    class_repository_mock.read_class_notice_list.return_value = class_notice_list_dto
 
     # Run
     results = await class_service_mock.read_class_notice_list(
@@ -58,8 +65,15 @@ async def test_read_class_notice_list(
 
     # Assert
     assert results != None
-    assert len(results) == 1
-    result = results[0]
+
+    result_page = results.page
+    assert result_page.page == page_dto.page
+    assert result_page.limit == page_dto.limit
+    assert result_page.total == page_dto.total
+
+    result_data = results.data
+    assert len(result_data) == 1
+    result = result_data[0]
     assert result.class_id == class_notice_dto.class_id
     assert result.notice_id == class_notice_dto.notice_id
     assert result.message == class_notice_dto.message

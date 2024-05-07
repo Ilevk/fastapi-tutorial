@@ -11,10 +11,9 @@ from app.core.errors.handler import api_error_handler, api_auth_error_handler
 from app.routers import router
 
 
-def create_app() -> FastAPI:
+def create_app(container=Container()) -> FastAPI:
     app = FastAPI(lifespan=lifespan, **config.fastapi_kwargs)
 
-    container = Container()
     container.config.from_dict(config.model_dump())
 
     app.include_router(router)
